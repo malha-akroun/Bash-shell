@@ -1,0 +1,39 @@
+echo "Début du script"
+
+if [ $# -ne 2 ]; then
+    echo "Usage: ./alcasar_login <email> <password>"
+    exit 1
+fi
+
+echo "Arguments reçus"
+
+email=$1
+password=$2
+alcasar_ip="http://10.10.55.147/16"
+
+echo "Tentative de connexion à $alcasar_ip"
+
+# Obtenir le challenge et l'URL de redirection
+response=$(curl -s -k "https://${alcasar_ip}/intercept.php")
+echo "Réponse reçue de intercept.php"
+
+challenge=$(echo "$response" | grep -oP 'challenge=\K[^&]*')
+redirect_url=$(echo "$response" | grep -oP 'userurl=\K[^"]*')
+
+echo "Challenge: $challenge"
+echo "URL de redirection: $redirect_url"
+
+# Effectuer l'authentification
+auth_response=$(curl -s -k -d "username=${email}&password=${password}&challenge=${challenge}&userurl=${redirect_url}" "https://${alcasar_ip}:3990/login")
+
+echo "Réponse d'authentification reçue"
+
+if echo "$auth_response" | grep -q "vous êtes connectés"; then
+    echo "Connexion réussie à Alcasar"
+else
+    echo "Échec de la connexion à Alcasar"
+    echo "Réponse complète : $auth_response"
+fi
+
+echo "Fin du script"
+
